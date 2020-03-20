@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPAのサンプルアプリ</title>
+</head>
+<body>
+  <div id="app">
+    <nav>
+      <router-link to="/top">TOPページ</router-link>
+      <router-link to="/users">ユーザー一覧ページ</router-link>
+    </nav>
+    <router-view></router-view>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://unpkg.com/vue-router@3.1.6/dist/vue-router.js"></script>
+
+  <script type="text/x-template" id="user-list">
+    <div>
+      <div class="loading" v-if="loading">読み込み中です。</div>
+      <div v-if="error">{{ error }}</div>
+      <div v-for="user in users" :key="user.id">
+        <p>{{ user.name }}</p>
+      </div>
+    </div>
+  </script>
+  <script type="text/x-template" id="user-detail">
+    <div>
+      <div class="loading" v-if="loading">読み込み中です。</div>
+      <div v-if="error" class="error">{{ error }}</div>
+      <div v-if="user">
+        <h2>{{ user.name }}</h2>
+        <p>{{ user.description }}</p>        
+      </div>
+    </div>
+  </script>
+  <script>
+    let userData = [
+      {
+        id: 1,
+        name: 'masanari hori',
+        description: 'エンジニア'
+      },
+      {
+        id: 2,
+        name: 'karin hongo',
+        description: 'デザイナー'
+      }
+    ]
+
+    let getUser = function(userId, callback) {
+      setTimeout(function() {
+        let filteredUsers = userData.filter((user) => {
+          return userId === parseInt(userId, 10)
+        })
+        callback(null, filteredUsers && filteredUsers[0])
+      }, 4000)
+    }
+
+    let UserDetail = {
+      template: '#user-detail',
+      data() {
+        return {
+          loading: false,
+          user: null,
+          error: null
+        }
+      },
+      created() {
+        this.fetchData()
+      },
+      watch: {
+        '$route': 'fetchData'
+      },
+      methods: {
+        fetchData() {
+          this.loading = true
+          getUser(this.$route.params.userId, (function(err, user) {
+            this.loading = false
+            if(err) {
+              this.error = error.toString()
+            } else {
+              this.user = user
+            }
+          }).bind(this))
+        }
+      }
+    }
+    // 擬似的にAPIからデータが返ってくる想定
+    let getUsers = function (callback) {
+      setTimeout(callback(null, [
+        {
+          id: 1,
+          name: 'masanari hori'
+        },
+        {
+          id: 2,
+          name: 'karin hongo'
+        }
+      ]), 4000)
+    }
+
+    let UserList = {
+      template: '#user-list',
+      data() {
+        return {
+          loading: false,
+          users: function() {
+            return []
+          },
+          error: null
+        }
+      },
+      created: function() {
+        this.fetchData()
+      },
+      // URLの遷移を監視する
+      watch: {
+        '$route': 'fetchData'
+      },
+      methods: {
+        fetchData: function() {
+          this.loading = true
+          getUsers((function(err, users) {
+            if(err) {
+              this.error = error.toString()
+            }
+            this.loading = false
+            this.users = users
+          }).bind(this))
+        }
+      }
+    }
+
+    let UserDetail = {
+      template: '#user-detail'
+    }
+
+    let router = new VueRouter({
+      routes: [
+        {
+          path: '/top',
+          component: {
+            template: '<div>TOPページです</div>'
+          }
+        },
+        {
+          path: '/users',
+          component: UserList
+        },
+        {
+          path: '/users/:id',
+          component: UserDetail
+        }
+      ]
+    })
+    let app = new Vue({
+      router: router
+    }).$mount('#app')
+  </script>
+</body>
+</html>
